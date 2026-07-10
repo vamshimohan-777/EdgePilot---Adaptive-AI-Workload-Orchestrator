@@ -1,0 +1,71 @@
+# System / Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.user
+
+# Python Build & Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+.env
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage
+
+# C / C++ Build Artifacts
+build/
+bin/
+out/
+lib/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+# CMake outputs
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+Makefile
+
+# Java Build Artifacts
+target/
+.gradle/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# Models and Large Data (AI specific)
+*.onnx
+*.gguf
+*.bin
+*.pt
+*.pth
+*.tflite
+models/downloads/
+data/raw/
+data/processed/
+
+# Logs & Telemetry Data
+*.log
+logs/
+.profiler_cache/
