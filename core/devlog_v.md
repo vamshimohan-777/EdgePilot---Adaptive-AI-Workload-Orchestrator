@@ -58,7 +58,7 @@ g++ -std=c++17 -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -Woverloaded
 
 ## Day 2 — Runtime Adapters & Testing
 **Date**: 2026-07-11
-**Status**: 🔶 In Progress
+**Status**: ✅ Complete
 
 ### Work Completed
 
@@ -69,12 +69,64 @@ g++ -std=c++17 -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -Woverloaded
   CPU/GPU, format `"onnx"`), `IsModelCompatible`, `Initialize`/`Shutdown` (idempotent),
   `LoadModel` (returns `OnnxActiveModel`).
 - TODO markers in every method body for real `onnxruntime.h` integration.
-- ✅ Compiled: 0 errors, 0 warnings.
-- CMakeLists updated to include new files.
 
-### Remaining
-- [ ] GGUF/llama.cpp Adapter (`llama_cpp_adapter.h` + `llama_cpp_adapter.cpp` stub)
-- [ ] CTest Unit Test Suite for Runtime Registry & Capability discovery
+#### 2. GGUF/llama.cpp Adapter (`llama_cpp_adapter.h` / `.cpp`)
+- `LlamaCppActiveModel` stub: `GetModelId`, `GetStatus`, `RunInference` (stub text
+  generation with `[llama-stub]` prefix, echoes prompt), `Unload` (idempotent),
+  destructor safety-net.
+- `LlamaCppAdapter` stub: `GetName` → `"llama_cpp"`, `GetCapabilities` (FP16/INT8/INT4,
+  CPU/GPU, format `"gguf"`, streaming=true, max_context_length=4096),
+  `IsModelCompatible`, `Initialize`/`Shutdown` (idempotent), `LoadModel`.
+- TODO markers for real `llama.h` integration.
+
+#### 3. Unit Test Suite (`tests/test_runtime_layer.cpp`)
+Lightweight assert-based framework (no external deps). **22 tests, all passed.**
+
+- **RuntimeRegistry** (9 tests): empty state, register+get, missing returns nullopt,
+  multiple runtimes, upsert replaces, unregister, unregister non-existent no-op,
+  clear, null registration ignored.
+- **OnnxRuntimeAdapter** (6 tests): name, capabilities, init/shutdown, compatibility
+  check, load-without-init fails, full lifecycle (load→inference→unload).
+- **LlamaCppAdapter** (5 tests): name, capabilities, compatibility check,
+  load-without-init fails, full lifecycle (load→inference→unload).
+- **Integration** (1 test): both adapters in registry, capability discovery,
+  load model through registry-resolved runtime.
+
+#### 4. Build Configuration Updates
+- `core/CMakeLists.txt`: added both adapter headers and sources.
+- `tests/CMakeLists.txt`: new file, links `test_runtime_layer` against `edgepilot_core`.
+
+### Test Results
+```
+========================================
+ EdgePilot P1 — Runtime Layer Test Suite
+========================================
+
+  registry_initially_empty.............. PASS
+  registry_register_and_get............ PASS
+  registry_get_missing_returns_nullopt. PASS
+  registry_register_multiple........... PASS
+  registry_upsert_replaces............. PASS
+  registry_unregister.................. PASS
+  registry_unregister_nonexistent...... PASS
+  registry_clear....................... PASS
+  registry_null_registration_ignored... PASS
+  onnx_adapter_name.................... PASS
+  onnx_adapter_capabilities............ PASS
+  onnx_adapter_initialize_and_shutdown. PASS
+  onnx_adapter_compatibility_check..... PASS
+  onnx_adapter_load_without_init_fails. PASS
+  onnx_adapter_load_incompatible_fails. PASS
+  onnx_adapter_full_lifecycle.......... PASS
+  llama_adapter_name................... PASS
+  llama_adapter_capabilities........... PASS
+  llama_adapter_compatibility_check.... PASS
+  llama_adapter_load_without_init_fails PASS
+  llama_adapter_full_lifecycle......... PASS
+  integration_registry_with_both....... PASS
+
+ Results: 22 passed, 0 failed, 22 total
+```
 
 ---
 

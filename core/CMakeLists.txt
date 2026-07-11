@@ -8,12 +8,14 @@ set(EDGEPILOT_CORE_HEADERS
     include/edgepilot/runtime_interface.h
     include/edgepilot/runtime_registry.h
     include/edgepilot/onnx_runtime_adapter.h
+    include/edgepilot/llama_cpp_adapter.h
 )
 
 # Implementation sources — compiled into the static library
 set(EDGEPILOT_CORE_SOURCES
     src/runtime_registry.cpp
     src/onnx_runtime_adapter.cpp
+    src/llama_cpp_adapter.cpp
 )
 
 add_library(edgepilot_core STATIC
