@@ -57,11 +57,22 @@ g++ -std=c++17 -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -Woverloaded
 ---
 
 ## Day 2 — Runtime Adapters & Testing
-**Date**: TBD
-**Status**: ⏳ Not started
+**Date**: 2026-07-11
+**Status**: 🔶 In Progress
 
-### Planned Work
-- [ ] ONNX Runtime Adapter (`onnx_runtime_adapter.h` + `onnx_runtime_adapter.cpp` stub)
+### Work Completed
+
+#### 1. ONNX Runtime Adapter (`onnx_runtime_adapter.h` / `.cpp`)
+- `OnnxActiveModel` stub: `GetModelId`, `GetStatus`, `RunInference` (echoes inputs),
+  `Unload` (idempotent), destructor safety-net.
+- `OnnxRuntimeAdapter` stub: `GetName` → `"onnx"`, `GetCapabilities` (FP32/FP16/INT8,
+  CPU/GPU, format `"onnx"`), `IsModelCompatible`, `Initialize`/`Shutdown` (idempotent),
+  `LoadModel` (returns `OnnxActiveModel`).
+- TODO markers in every method body for real `onnxruntime.h` integration.
+- ✅ Compiled: 0 errors, 0 warnings.
+- CMakeLists updated to include new files.
+
+### Remaining
 - [ ] GGUF/llama.cpp Adapter (`llama_cpp_adapter.h` + `llama_cpp_adapter.cpp` stub)
 - [ ] CTest Unit Test Suite for Runtime Registry & Capability discovery
 
