@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <mutex>
 
 // =============================================================================
 // EdgePilot — P1: Runtime & Model Infrastructure
@@ -41,8 +42,11 @@ public:
     bool            Unload() override;
 
 private:
+    friend class OnnxRuntimeAdapter;
     std::string  model_id_;
     ModelStatus  status_;
+    void*        session_ = nullptr;
+    std::mutex   inference_mutex_;
 };
 
 
@@ -76,7 +80,8 @@ public:
         LoadModel(const ModelMetadata& metadata, const DeviceConfig& config) override;
 
 private:
-    bool initialized_ = false;
+    bool  initialized_ = false;
+    void* env_ = nullptr;
 };
 
 } // namespace edgepilot

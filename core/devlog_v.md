@@ -131,13 +131,78 @@ Lightweight assert-based framework (no external deps). **22 tests, all passed.**
 ---
 
 ## Day 3 — Model Infrastructure & Lifecycle
-**Date**: TBD
-**Status**: ⏳ Not started
+**Date**: 2026-07-11
+**Status**: ✅ Complete
 
-### Planned Work
-- [ ] Model Registry (`model_registry.h` + `model_registry.cpp` metadata storage)
-- [ ] Quantization Metadata Manager (`quantization_manager.h` + `quantization_manager.cpp`)
-- [ ] Model Lifecycle Manager (`lifecycle_manager.h` + `lifecycle_manager.cpp` load/unload caching & inference locking)
-- [ ] Integration tests: full load → inference → unload cycle
-- [ ] core/README.md documentation
+### Work Completed
+
+#### 1. Model Registry (`model_registry.h` / `.cpp`)
+- Thread-safe metadata store utilizing `std::mutex` for synchronization.
+- `Register()` — upsert (overwrite on duplicate) semantics.
+- `Unregister()` — no-op on non-existent models.
+- `Get()` — returns `std::optional<ModelMetadata>` (safe retrieval).
+- Query helpers: `List()`, `ListByTask(TaskType)`, and `ListByRuntime(string)` (exact case-sensitive match on compatibility array).
+
+#### 2. Quantization Metadata Manager (`quantization_manager.h` / `.cpp`)
+- Implemented as a lightweight Façade pattern over the `ModelRegistry` class.
+- Does not store its own state; constructor-injected with a read-only `ModelRegistry` reference.
+- Exposes `GetVariants(model_id)`, `GetVariant(model_id, variant_id)`, `GetDefault(model_id)` (returns first variant), and `HasVariants(model_id)`.
+
+#### 3. Model Lifecycle Manager (`lifecycle_manager.h` / `.cpp`)
+- Primary coordinator for model lifecycles. Constructor-injected with references to both `ModelRegistry` and `RuntimeRegistry`.
+- `Load()`: Idempotent caching (returns active handle on cache hit). Automatically falls back to model's `preferred_runtime` or first `compatible_runtime` if no runtime name is specified.
+- `Unload()`: Synchronization using a reference counter (`inference_count_`) and `std::condition_variable` (`inference_cv_`). blocks until active inferences reach zero to prevent unload-while-inference race conditions.
+- `Reload()`: Safely executes `Unload()` followed by `Load()`.
+- Thread-safe status querying and handle retrieval via `IsLoaded()`, `QueryStatus()`, and `GetHandle()`.
+
+#### 4. Model & Integration Test Suite (`tests/test_model_layer.cpp`)
+- Built an assert-based suite of **29 unit and integration tests** verifying all Day 3 requirements:
+  - **ModelRegistry** (9 tests): empty registry, register and retrieve, get missing, upsert/overwrite, List, ListByTask, ListByRuntime, Unregister, Clear.
+  - **QuantizationMetadataManager** (6 tests): get variants, get variants for missing model, get specific variant, get default variant, default with no variants, has variants.
+  - **ModelLifecycleManager** (11 tests): load, cache-hit (pointer comparison), load not found model, load unregistered runtime, preferred runtime fallback, unload model, unload not-loaded, reload model, get handle, get all loaded, query status.
+  - **Pipeline Integration** (3 tests): full ONNX load/inference/unload flow, full GGUF load/inference/unload flow, multi-model concurrent load/inference/unload.
+
+#### 5. Documentation
+- Created a comprehensive [core/README.md](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/core/README.md) detailing architecture, design patterns, thread safety contracts, building instructions, and test runs.
+- Updated both root and core CMake build scripts.
+
+### Test Results
+```
+========================================
+ EdgePilot P1 — Model Layer Test Suite  
+========================================
+
+  model_registry_initially_empty.......... PASS
+  model_registry_register_and_get......... PASS
+  model_registry_get_missing_returns...... PASS
+  model_registry_upsert_replaces.......... PASS
+  model_registry_register_multiple........ PASS
+  model_registry_list_by_task............. PASS
+  model_registry_list_by_runtime.......... PASS
+  model_registry_unregister............... PASS
+  model_registry_clear.................... PASS
+  quant_manager_get_variants.............. PASS
+  quant_manager_get_variants_missing...... PASS
+  quant_manager_get_specific_variant...... PASS
+  quant_manager_get_default............... PASS
+  quant_manager_get_default_no_variants... PASS
+  quant_manager_has_variants.............. PASS
+  lifecycle_load_model.................... PASS
+  lifecycle_cache_hit..................... PASS
+  lifecycle_load_model_not_found.......... PASS
+  lifecycle_load_runtime_not_found........ PASS
+  lifecycle_load_with_fallback............ PASS
+  lifecycle_unload_model.................. PASS
+  lifecycle_unload_not_loaded............. PASS
+  lifecycle_reload_model.................. PASS
+  lifecycle_get_handle.................... PASS
+  lifecycle_get_all_loaded................ PASS
+  lifecycle_query_status_not_loaded....... PASS
+  integration_full_onnx_pipeline.......... PASS
+  integration_full_llama_pipeline......... PASS
+  integration_multi_model_concurrent...... PASS
+
+ Results: 29 passed, 0 failed, 29 total
+```
+
 
