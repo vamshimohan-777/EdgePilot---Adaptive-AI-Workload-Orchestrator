@@ -182,6 +182,9 @@ async function runSequentialPipeline() {
         if (!stage1Response.ok) throw new Error("Stage 1 submit failed");
         const stage1Job = await stage1Response.json();
         
+        // Add to jobIds list for the history table
+        jobIds.push({ id: stage1Job.job_id, model_id: "resnet50", priority: 2, status: "QUEUED" });
+        
         logToConsole(`[STAGE 1] Workload dispatched. Job ID: ${stage1Job.job_id}. Priority: HIGH.`, "info");
         logToConsole(`[STAGE 1] Worker assigned. Running inference...`, "system");
         
@@ -203,6 +206,9 @@ async function runSequentialPipeline() {
         
         if (!stage2Response.ok) throw new Error("Stage 2 submit failed");
         const stage2Job = await stage2Response.json();
+        
+        // Add to jobIds list for the history table
+        jobIds.push({ id: stage2Job.job_id, model_id: "llama3-8b", priority: 1, status: "QUEUED" });
         
         logToConsole(`[STAGE 2] Workload dispatched. Job ID: ${stage2Job.job_id}. Priority: NORMAL.`, "info");
         logToConsole(`[STAGE 2] Worker assigned. Running text decoding...`, "system");
@@ -257,6 +263,7 @@ async function runConcurrentBatch() {
                 status: "QUEUED"
             };
             batchJobs.push(jobObj);
+            jobIds.push(jobObj);
             
             const card = document.createElement('div');
             card.className = "batch-job-card queued";

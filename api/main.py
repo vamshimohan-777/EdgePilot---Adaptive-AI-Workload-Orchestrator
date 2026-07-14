@@ -15,7 +15,9 @@ if parent_dir not in sys.path:
 
 try:
     from learning.train_rl_scheduler import relearn_online
-except ImportError:
+except Exception as e:
+    import sys
+    print(f"Warning: Online RL retraining modules could not be loaded: {e}", file=sys.stderr)
     relearn_online = None
 
 # =============================================================================
