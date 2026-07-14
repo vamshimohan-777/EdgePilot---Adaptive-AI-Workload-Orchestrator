@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdgePilot Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-sphere main-glow"></div>
+    <div class="glow-sphere secondary-glow"></div>
+
+    <header>
+        <div class="logo">
+            <span class="logo-icon">▲</span>
+            <h1>EdgePilot</h1>
+            <span class="tagline">Orchestrator</span>
+        </div>
+        
+        <nav class="tab-navigation">
+            <button class="tab-button active" onclick="switchTab('observability')">OBSERVABILITY</button>
+            <button class="tab-button" onclick="switchTab('sandbox')">MULTI-MODEL SANDBOX</button>
+        </nav>
+
+        <div class="connection-status" id="status-badge">
+            <span class="status-dot pulse"></span>
+            <span class="status-text">DAEMON CONNECTED</span>
+        </div>
+    </header>
+
+    <main class="content-container">
+        
+        <!-- Tab 1: Observability Dashboard -->
+        <div id="tab-observability" class="tab-content active">
+            <div class="grid-layout">
+                <!-- Live System Telemetry -->
+                <section class="card span-2 telemetry">
+                    <h2 class="section-title">Live System Telemetry</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <span class="metric-label">CPU LOAD</span>
+                            <div class="metric-value-container">
+                                <span class="metric-value" id="cpu-val">0.0%</span>
+                                <div class="progress-bar-bg"><div class="progress-bar" id="cpu-bar" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">GPU LOAD</span>
+                            <div class="metric-value-container">
+                                <span class="metric-value" id="gpu-val">0.0%</span>
+                                <div class="progress-bar-bg"><div class="progress-bar" id="gpu-bar" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">FREE RAM</span>
+                            <div class="metric-value-container">
+                                <span class="metric-value" id="ram-val">0.00 GB</span>
+                                <span class="metric-subtext">Physical Memory</span>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">DEVICE TEMP</span>
+                            <div class="metric-value-container">
+                                <span class="metric-value" id="temp-val">0.0°C</span>
+                                <span class="metric-subtext" id="temp-status">Normal</span>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">BATTERY</span>
+                            <div class="metric-value-container">
+                                <span class="metric-value" id="batt-val">0%</span>
+                                <span class="metric-subtext" id="batt-status">Discharging</span>
+                            </div>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">JOB QUEUE</span>
+                            <div class="metric-value-container">
+                                <span class="metric-value" id="queue-val">0</span>
+                                <span class="metric-subtext">Pending Inference Tasks</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Model Residency Cache -->
+                <section class="card residency">
+                    <h2 class="section-title">Model Residency Cache</h2>
+                    <p class="subtitle">Currently loaded active models in RAM</p>
+                    <ul class="residency-list" id="loaded-models-list">
+                        <li class="empty-state">No models loaded in memory.</li>
+                    </ul>
+                </section>
+
+                <!-- Execution History & Timeline -->
+                <section class="card span-full history">
+                    <h2 class="section-title">Execution Timeline & Scheduler Decisions</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Model ID</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Output Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="job-history-rows">
+                                <tr>
+                                    <td colspan="5" class="empty-table">No workloads dispatched in this session.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Tab 2: Multi-Model Sandbox -->
+        <div id="tab-sandbox" class="tab-content">
+            <div class="grid-layout">
+                <!-- Sandbox Controls -->
+                <section class="card sandbox-controls">
+                    <h2 class="section-title">Test Scenarios</h2>
+                    <p class="subtitle">Choose a multi-model workload to dispatch</p>
+                    
+                    <div class="sandbox-buttons-group">
+                        <div class="scenario-box">
+                            <h3>1. Sequential Pipeline Run</h3>
+                            <p class="scenario-desc">Pipes `resnet50` classification output directly as the text prompt to `llama3-8b` in sequence.</p>
+                            <div class="form-group" style="margin: 12px 0;">
+                                <label for="pipe-prompt">Initial Image Classification Input</label>
+                                <input type="text" id="pipe-prompt" value="Inference Classification Object Target" style="width: 100%; padding: 8px; font-size: 13px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 6px; color: #fff;">
+                            </div>
+                            <button class="glow-button" onclick="runSequentialPipeline()" style="width: 100%; padding: 10px; font-size: 13px;">Execute Pipeline</button>
+                        </div>
+
+                        <div class="scenario-box" style="margin-top: 20px;">
+                            <h3>2. Concurrent Batch Load Test</h3>
+                            <p class="scenario-desc">Submits 10 mixed jobs (ResNet + LLaMA) concurrently with High/Normal/Low priorities to verify C++ worker pool scheduling.</p>
+                            <button class="glow-button" onclick="runConcurrentBatch()" style="width: 100%; padding: 10px; font-size: 13px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));">Trigger Batch Run</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Model Profiling & Registration -->
+                <section class="card model-registration">
+                    <h2 class="section-title">Model Profiling & Registration</h2>
+                    <p class="subtitle">Benchmark and register a new model target</p>
+                    
+                    <div class="form-group" style="margin: 12px 0;">
+                        <label for="reg-model-id" style="display: block; font-size: 11px; margin-bottom: 4px; color: var(--text-dim);">Model Identifier</label>
+                        <input type="text" id="reg-model-id" placeholder="e.g. mobilenet_v3" style="width: 100%; padding: 8px; font-size: 13px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div class="form-group" style="margin: 12px 0;">
+                        <label for="reg-model-path" style="display: block; font-size: 11px; margin-bottom: 4px; color: var(--text-dim);">Local Model File</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" id="reg-model-path" readonly placeholder="Click Browse to select a .onnx or .gguf file…"
+                                style="flex: 1; padding: 8px 10px; font-size: 12px; background: rgba(0,0,0,0.25);
+                                       border: 1px solid var(--border-color); border-radius: 6px; color: rgba(255,255,255,0.7);
+                                       cursor: default; font-style: italic; min-width: 0;">
+                            <button id="btn-browse-model" onclick="browseModelFile()"
+                                style="display: inline-flex; align-items: center; gap: 6px;
+                                       padding: 0 14px; height: 35px; min-width: 90px;
+                                       font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+                                       background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.35));
+                                       border: 1px solid rgba(139,92,246,0.55); border-radius: 6px;
+                                       color: #c4b5fd; cursor: pointer; white-space: nowrap;
+                                       transition: all 0.2s ease; flex-shrink: 0;"
+                                onmouseover="this.style.background='linear-gradient(135deg,rgba(99,102,241,0.55),rgba(139,92,246,0.55))'; this.style.borderColor='rgba(167,139,250,0.8)'"
+                                onmouseout="this.style.background='linear-gradient(135deg,rgba(99,102,241,0.35),rgba(139,92,246,0.35))'; this.style.borderColor='rgba(139,92,246,0.55)'">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                Browse
+                            </button>
+                        </div>
+                        <p style="font-size: 10px; color: var(--text-dim); margin: 4px 0 0 0; opacity: 0.6;">Supported: .onnx · .gguf</p>
+                    </div>
+                    <div class="form-group" style="margin: 12px 0;">
+                        <label style="display: block; font-size: 11px; margin-bottom: 4px; color: var(--text-dim);">Compatible Runtimes</label>
+                        <div style="display: flex; gap: 15px; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer;">
+                                <input type="checkbox" id="reg-rt-onnx" checked> ONNX
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; cursor: pointer;">
+                                <input type="checkbox" id="reg-rt-llama"> llama.cpp
+                            </label>
+                        </div>
+                    </div>
+                    <button class="glow-button" onclick="registerAndProfileModel()" style="width: 100%; padding: 10px; font-size: 13px; margin-top: 10px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));">Add & Profile Model</button>
+                </section>
+
+                <!-- Sandbox Console Output -->
+                <section class="card span-2 sandbox-terminal">
+                    <h2 class="section-title">Live Sandbox Execution Console</h2>
+                    <div class="console-box" id="sandbox-console">
+                        <div class="console-line system-line">[SYSTEM] EdgePilot Sandbox Initialized. Waiting for workload trigger...</div>
+                    </div>
+                    <div class="sandbox-grid-display" id="sandbox-batch-grid" style="display: none;"></div>
+                </section>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <p>EdgePilot Orchestrator • Operating-System-Inspired Adaptive On-Device AI • Python/C++ Native Daemon</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

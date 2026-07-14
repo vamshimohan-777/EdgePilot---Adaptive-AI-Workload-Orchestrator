@@ -7,11 +7,8 @@
 #include <optional>
 
 // =============================================================================
-// EdgePilot — P1: Runtime & Model Infrastructure
-// types.h — Shared data structures used across all P1 components
-//
-// Design: All types are plain data structs with no logic.
-//         No dependency on any inference runtime library.
+// EdgePilot — P1/P2/P3/P4: Runtime & Model Infrastructure + Execution Kernel
+// types.h — Shared data structures used across all EdgePilot components
 // =============================================================================
 
 namespace edgepilot {
@@ -57,6 +54,23 @@ enum class ModelStatus {
     Error        ///< Load or unload failed; see logs for details
 };
 
+/// Execution status of an inference Job.
+enum class JobStatus {
+    Submitted,   ///< Job received and placed in the queue
+    Scheduled,   ///< Job matched with a runtime and resource policy
+    Executing,   ///< Job is running on a worker thread
+    Completed,   ///< Inference finished successfully
+    Failed       ///< Inference failed with an error
+};
+
+/// Priority of an inference workload.
+enum class JobPriority {
+    Low,
+    Normal,
+    High,
+    RealTime
+};
+
 
 // ---------------------------------------------------------------------------
 // Tensor types
@@ -71,8 +85,7 @@ struct TensorSpec {
 };
 
 /// A tensor carrying actual data — used in InferenceRequest and InferenceResult.
-/// Data is stored as a raw byte buffer. The caller casts to the correct type
-/// based on the `dtype` field.
+/// Data is stored as a raw byte buffer.
 struct Tensor {
     std::string           name;
     std::vector<int64_t>  shape;
@@ -99,7 +112,6 @@ struct QuantizationVariant {
 // ---------------------------------------------------------------------------
 
 /// Complete descriptor for a registered model.
-/// This struct is metadata only — it does not hold loaded weights or state.
 struct ModelMetadata {
     std::string                      model_id;
     std::string                      display_name;
@@ -107,11 +119,9 @@ struct ModelMetadata {
     TaskType                         task_type;
 
     /// Runtime names this model is compatible with (e.g. "onnx", "llama_cpp").
-    /// Must match the name returned by IInferenceRuntime::GetName().
     std::vector<std::string>         compatible_runtimes;
 
     /// Preferred runtime to use when the caller does not specify one.
-    /// Empty string means no preference; the first compatible runtime is used.
     std::string                      preferred_runtime;
 
     std::vector<Precision>           supported_precisions;
@@ -138,7 +148,7 @@ struct DeviceConfig {
     /// The quantization_variant_id to load. Empty string = use default precision.
     std::string    quantization_variant_id;
 
-    /// Runtime-specific key-value options (e.g. "gpu_device_id": "0").
+    /// Runtime-specific key-value options.
     std::unordered_map<std::string, std::string> extra_options;
 };
 
@@ -154,14 +164,13 @@ struct RuntimeCapabilities {
     std::vector<HardwareDevice>  supported_devices;
     bool                         supports_streaming = false;
 
-    /// Extensible key-value store for runtime-specific capability fields
-    /// (e.g. "max_context_length": "4096", "max_batch_size": "32").
+    /// Extensible key-value store for runtime-specific capability fields.
     std::unordered_map<std::string, std::string> extra_info;
 };
 
 
 // ---------------------------------------------------------------------------
-// Inference I/O
+// Inference I/O & Workloads
 // ---------------------------------------------------------------------------
 
 /// Input to a single inference call.
@@ -182,8 +191,8 @@ struct InferenceRequest {
 /// Output of a single inference call.
 struct InferenceResult {
     std::string              request_id;
-    bool                     success;
-    std::string              error_message;   ///< Non-empty when success == false
+    bool                     success = false;
+    std::string              error_message;
 
     /// Structured tensor outputs for non-LLM models.
     std::vector<Tensor>      tensor_outputs;
@@ -192,8 +201,51 @@ struct InferenceResult {
     std::unordered_map<std::string, std::string> text_outputs;
 
     /// Wall-clock latency measured by the adapter from call entry to return.
-    /// Populated by the adapter; read by the Telemetry module from the result.
     uint64_t                 latency_us = 0;
+};
+
+/// An execution Job containing the request payload, priority, and timestamps.
+struct Job {
+    std::string             job_id;
+    std::string             model_id;
+    JobPriority             priority        = JobPriority::Normal;
+    InferenceRequest        request;
+    uint64_t                submitted_at_us = 0;
+    uint64_t                deadline_at_us  = 0; ///< 0 means no deadline
+};
+
+/// Result of an executed job returned to the caller.
+struct JobResult {
+    std::string             job_id;
+    JobStatus               status          = JobStatus::Failed;
+    InferenceResult         result;
+    std::string             error_message;
+};
+
+
+// ---------------------------------------------------------------------------
+// Scheduler Inputs and Outputs
+// ---------------------------------------------------------------------------
+
+/// Represents real-time system resource usage metrics.
+struct SystemState {
+    float                    cpu_utilization    = 0.0f; ///< 0.0 to 100.0
+    float                    gpu_utilization    = 0.0f; ///< 0.0 to 100.0
+    uint64_t                 ram_free_bytes     = 0;
+    float                    battery_level      = 100.0f; ///< 0.0 to 100.0
+    float                    device_temperature = 0.0f; ///< Celsius
+    uint32_t                 queue_length       = 0;
+    std::vector<std::string> loaded_models;
+};
+
+/// Scheduling decisions generated by scheduling agents.
+struct SchedulingDecision {
+    std::string              runtime_name;
+    std::string              quantization_variant_id;
+    JobPriority              adjusted_priority;
+    uint32_t                 execution_delay_ms = 0;
+    std::vector<std::string> preload_models;
+    std::vector<std::string> evict_models;
 };
 
 } // namespace edgepilot

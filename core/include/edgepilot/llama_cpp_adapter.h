@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <mutex>
 
 // =============================================================================
 // EdgePilot — P1: Runtime & Model Infrastructure
@@ -41,8 +42,12 @@ public:
     bool            Unload() override;
 
 private:
+    friend class LlamaCppAdapter;
     std::string  model_id_;
     ModelStatus  status_;
+    void*        model_ = nullptr;
+    void*        ctx_ = nullptr;
+    std::mutex   inference_mutex_;
 };
 
 
