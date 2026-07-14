@@ -143,3 +143,11 @@ Once launched, open your browser and navigate to:
 ### License
 This project is licensed under the **MIT License** - see the LICENSE file for details.
 
+### Current Limitations
+* **Simulated Execution Adapters:** The ONNX and llama.cpp adapter layers in the core library execute deterministic profiling stubs. Real downstream hardware pipeline integration requires linking target DLLs/SO files.
+* **Platform Dependence:** Launch wrappers and file-browsers are optimized for Windows shell operations (`cmd` and `tkinter`).
+
+### Future Scope
+* **Hardware-Accelerated Execution:** Link target runtime backends to execute on physical NPUs, Apple Silicon CoreML, and Nvidia TensorRT.
+* **Multi-Agent Edge Swarms:** Enable workload offloading and distributed cooperative scheduling across local mesh networks.
+* **Fine-grained Power Management:** Integrate hardware level frequency scaling (DVFS) controllers directly into the C++ orchestrator loop.
