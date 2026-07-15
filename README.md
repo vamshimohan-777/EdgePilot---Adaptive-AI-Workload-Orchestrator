@@ -151,3 +151,17 @@ This project is licensed under the **MIT License** - see the LICENSE file for de
 * **Hardware-Accelerated Execution:** Link target runtime backends to execute on physical NPUs, Apple Silicon CoreML, and Nvidia TensorRT.
 * **Multi-Agent Edge Swarms:** Enable workload offloading and distributed cooperative scheduling across local mesh networks.
 * **Fine-grained Power Management:** Integrate hardware level frequency scaling (DVFS) controllers directly into the C++ orchestrator loop.
+
+---
+
+## 7. System Documentation
+
+For detailed analysis, benchmarks, and architectural reviews, consult the following documentation modules:
+
+* 📊 **[Architecture Overview](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/ARCHITECTURE.md)**: Deep dive into C++ Core Daemon, REST API Gateway, worker thread pool synchronization, and Mermaid block diagrams.
+* 📈 **[Technical Report](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/TECHNICAL_REPORT.md)**: Quantitative execution latencies, peak memory (RAM) allocation footprints, dynamic quantization scaling parameters, and tested host hardware configurations.
+* 🛡️ **[Local AI Verification](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/LOCAL_AI_VERIFICATION.md)**: Details on offline local-first guarantees, loopback TCP IP configurations (`127.0.0.1`), and absolute user data privacy boundaries.
+* 🧪 **[Evaluation & Benchmarks](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/EVALUATION.md)**: Comparison of Heuristic vs. AI Schedulers, cold-start model profiling methodology, and operational failure mitigations.
+* 🔒 **[Privacy and Safety](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/PRIVACY_AND_SAFETY.md)**: Data memory lifecycle governance, local file system logging policies, and thermal safety throttling safeguards.
+* 📚 **[Attribution Guide](file:///c:/Users/kasiv/Desktop/EdgePilot---Adaptive-AI-Workload-Orchestrator/ATTRIBUTION.md)**: Credit attributions, licensing, and reference details for the open-source libraries, models, and runtimes used.
+
